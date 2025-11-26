@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Huize Bruce Weektaak",
+  "description": "A smart household chore tracker for Huize Bruce. Tracks weekly rotation of tasks (Trash, Floors, Kitchen, etc.) for Vera, Uli, Phee, Vincent, and Feie based on a 5-week cycling schedule.",
+  "requestFramePermissions": []
+}
