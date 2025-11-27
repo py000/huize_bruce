@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, ChevronRight } from 'lucide-react';
+import { X, Calendar as CalendarIcon, ChevronRight, Copy, Check } from 'lucide-react';
 import { Person } from '../types';
 import { PEOPLE_ORDER, getAvatarColor } from '../constants';
 import { getWeekData } from '../utils';
@@ -17,11 +17,13 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 }) => {
   const [selectedPerson, setSelectedPerson] = useState<Person>(PEOPLE_ORDER[0]);
   const [upcomingEvents, setUpcomingEvents] = useState<{date: Date, taskName: string, description: string}[]>([]);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   
   // Reset state when opening
   useEffect(() => {
     if (isOpen) {
       setSelectedPerson(PEOPLE_ORDER[0]);
+      setCopiedUrl(null);
     }
   }, [isOpen]);
 
@@ -108,6 +110,51 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
     const base64 = btoa(unescape(encodeURIComponent(ics)));
     // Use standard data URI for direct import
     return `data:text/calendar;base64,${base64}`;
+  };
+
+  // Generate subscription URLs
+  const getBaseUrl = () => {
+    // Use current window location, or default to the VPS URL if available
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin;
+      // If localhost, use the VPS URL (you can change this to your actual domain)
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return 'http://57.131.25.225'; // Main site URL (Nginx will proxy /api/ to port 3001)
+      }
+      // For production, use the same origin (Nginx proxies /api/ to the API server)
+      return origin;
+    }
+    return 'http://57.131.25.225'; // Fallback to VPS URL
+  };
+
+  const getSubscriptionUrl = () => {
+    const baseUrl = getBaseUrl();
+    const personLower = selectedPerson.toLowerCase();
+    // This URL points to the API endpoint that serves the ICS file
+    // Nginx will proxy /api/calendar/*.ics to the Node.js server on port 3001
+    return `${baseUrl}/api/calendar/${personLower}.ics`;
+  };
+
+  const getAppleCalendarUrl = () => {
+    const url = getSubscriptionUrl();
+    // Apple Calendar uses webcal:// protocol for subscriptions
+    return url.replace(/^https?:\/\//, 'webcal://');
+  };
+
+  const getGoogleCalendarUrl = () => {
+    const url = getSubscriptionUrl();
+    // Google Calendar subscription URL - encode the ICS URL
+    return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(url)}`;
+  };
+
+  const copyToClipboard = async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedUrl(type);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
   return (
@@ -197,19 +244,95 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
             </div>
           </div>
 
-          {/* Action Button */}
+          {/* Subscription URLs Section */}
+          <div className="mb-4">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              Calendar Subscription
+            </label>
+            
+            {/* Apple Calendar */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-slate-600">Apple Calendar</span>
+                {copiedUrl === 'apple' && (
+                  <span className="text-[10px] text-green-600 font-semibold flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    Copied!
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={getAppleCalendarUrl()}
+                  className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono"
+                />
+                <button
+                  onClick={() => copyToClipboard(getAppleCalendarUrl(), 'apple')}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors flex items-center gap-1"
+                  title="Copy Apple Calendar URL"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Copy this URL and subscribe in Apple Calendar
+              </p>
+            </div>
+
+            {/* Google Calendar */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-slate-600">Google Calendar</span>
+                {copiedUrl === 'google' && (
+                  <span className="text-[10px] text-green-600 font-semibold flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    Copied!
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={getGoogleCalendarUrl()}
+                  className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono"
+                />
+                <button
+                  onClick={() => copyToClipboard(getGoogleCalendarUrl(), 'google')}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors flex items-center gap-1"
+                  title="Copy Google Calendar URL"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Copy this URL and add to Google Calendar
+              </p>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-slate-200"></div>
+            <span className="text-xs text-slate-400 font-semibold">OR</span>
+            <div className="flex-1 h-px bg-slate-200"></div>
+          </div>
+
+          {/* Download Button */}
           <a 
             href={getIcsHref()} 
             download={`huize_bruce_${selectedPerson.toLowerCase()}_schedule.ics`}
             className="flex items-center justify-center w-full gap-2 bg-indigo-600 text-white font-bold py-4 px-4 rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 active:scale-95 group"
           >
             <CalendarIcon className="w-5 h-5" />
-            <span>Add to Calendar</span>
+            <span>Download .ics File</span>
             <ChevronRight className="w-4 h-4 opacity-50 group-hover:translate-x-1 transition-transform" />
           </a>
 
           <p className="text-[10px] text-slate-400 text-center mt-4 px-2 leading-relaxed">
-            Downloads a calendar file (.ics) with your tasks for the next 4 weeks. Open the file to add the events to your calendar.
+            Subscribe to get automatic updates, or download a one-time calendar file.
           </p>
 
         </div>

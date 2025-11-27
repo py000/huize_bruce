@@ -36,12 +36,41 @@ export const getWeekData = (targetDate: Date): WeekData => {
   const currentWeekEnd = new Date(currentWeekStart);
   currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
 
+  // Exact assignments from CSV file (huize-bruce-weeks-from-2025-11-10-to-2027.csv)
+  // CSV column order: Afval, Vloer+Bank, Aanrecht, Bureautje, Boodschappen
+  // Our task order: Afval(0), Vloer(1), Doekjes(2), Aanrecht(3), Bureau(4)
+  // Mapping: CSV[0]=Our[0], CSV[1]=Our[1], CSV[2]=Our[3], CSV[3]=Our[4], CSV[4]=Our[2]
+  // Week 1: Afval->Vera(0), Vloer->Uli(1), Aanrecht->Vincent(3), Bureau->Feie(4), Doekjes->Phee(2)
+  // Week 2: Afval->Uli(1), Vloer->Phee(2), Aanrecht->Feie(4), Bureau->Vera(0), Doekjes->Vincent(3)
+  // Week 3: Afval->Phee(2), Vloer->Vincent(3), Aanrecht->Vera(0), Bureau->Uli(1), Doekjes->Feie(4)
+  // Week 4: Afval->Vincent(3), Vloer->Feie(4), Aanrecht->Uli(1), Bureau->Phee(2), Doekjes->Vera(0)
+  // Week 5: Afval->Feie(4), Vloer->Vera(0), Aanrecht->Phee(2), Bureau->Vincent(3), Doekjes->Uli(1)
+  
   const assignments: WeeklyAssignment[] = TASKS.map((task, taskIndex) => {
-    // Logic from whiteboard:
-    // Week 1 (Index 0): Task 0 -> Person 0, Task 1 -> Person 1...
-    // Week 2 (Index 1): Task 0 -> Person 1, Task 1 -> Person 2...
-    // Formula: PersonIndex = (TaskIndex + WeekIndex) % 5
-    const personIndex = (taskIndex + cycleIndex) % 5;
+    // Task order in our code: 0=Afval, 1=Vloer, 2=Doekjes, 3=Aanrecht, 4=Bureau
+    // CSV order: 0=Afval, 1=Vloer+Bank, 2=Aanrecht, 3=Bureautje, 4=Boodschappen
+    // So: Our[0]=CSV[0], Our[1]=CSV[1], Our[2]=CSV[4], Our[3]=CSV[2], Our[4]=CSV[3]
+    
+    let personIndex: number;
+    
+    if (taskIndex === 0) {
+      // Afval: standard rotation starting at 0
+      personIndex = cycleIndex % 5;
+    } else if (taskIndex === 1) {
+      // Vloer: standard rotation starting at 1
+      personIndex = (1 + cycleIndex) % 5;
+    } else if (taskIndex === 2) {
+      // Doekjes (Boodschappen in CSV): standard rotation starting at 2
+      personIndex = (2 + cycleIndex) % 5;
+    } else if (taskIndex === 3) {
+      // Aanrecht: [3, 4, 0, 1, 2] from CSV
+      const pattern = [3, 4, 0, 1, 2];
+      personIndex = pattern[cycleIndex];
+    } else {
+      // Bureau (Bureautje in CSV): [4, 0, 1, 2, 3] from CSV
+      const pattern = [4, 0, 1, 2, 3];
+      personIndex = pattern[cycleIndex];
+    }
     
     return {
       task,
@@ -67,4 +96,20 @@ export const isSameDay = (d1: Date, d2: Date) => {
   return d1.getDate() === d2.getDate() && 
          d1.getMonth() === d2.getMonth() && 
          d1.getFullYear() === d2.getFullYear();
+};
+
+/**
+ * Checks if a date falls within a week range (inclusive)
+ */
+export const isDateInWeek = (date: Date, weekStart: Date, weekEnd: Date): boolean => {
+  const checkDate = new Date(date);
+  checkDate.setHours(0, 0, 0, 0);
+  
+  const start = new Date(weekStart);
+  start.setHours(0, 0, 0, 0);
+  
+  const end = new Date(weekEnd);
+  end.setHours(23, 59, 59, 999);
+  
+  return checkDate >= start && checkDate <= end;
 };

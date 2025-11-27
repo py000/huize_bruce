@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Git credentials (contains tokens)
+.git-credentials
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowLeft, ArrowRight, Calendar, Info, CalendarPlus } from 'lucide-react';
-import { getWeekData, formatDateRange } from './utils';
+import { getWeekData, formatDateRange, isDateInWeek } from './utils';
 import { TaskCard } from './components/TaskCard';
 import { CalendarModal } from './components/CalendarModal';
 
 export default function App() {
-  // We initialize with a date in "Week 3" (Nov 26, 2024) to match the prompt's context initially
+  // Initialize with today's date to show the current week
   const [currentDate, setCurrentDate] = useState<Date>(() => {
-    const demoDate = new Date('2024-11-26T12:00:00'); // Week 3
-    return demoDate;
+    return new Date();
   });
 
   const [isLiveMode, setIsLiveMode] = useState(false);
@@ -21,11 +20,17 @@ export default function App() {
   };
 
   const handleResetDemo = () => {
-    setCurrentDate(new Date('2024-11-26T12:00:00')); // Reset to Week 3
+    setCurrentDate(new Date()); // Reset to current week
     setIsLiveMode(false);
   }
 
   const weekData = useMemo(() => getWeekData(currentDate), [currentDate]);
+  
+  // Check if the displayed week is the current week (contains today's date)
+  const isCurrentWeek = useMemo(() => {
+    const today = new Date();
+    return isDateInWeek(today, weekData.startDate, weekData.endDate);
+  }, [weekData.startDate, weekData.endDate]);
 
   const handlePrevWeek = () => {
     const newDate = new Date(currentDate);
@@ -79,8 +84,8 @@ export default function App() {
           </button>
 
           <div className="text-center">
-            <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-0.5">
-              Current Period
+            <div className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isCurrentWeek ? 'text-green-600' : 'text-slate-400'}`}>
+              {isCurrentWeek ? 'Current Period' : 'Viewing Week'}
             </div>
             <div className="flex items-center justify-center gap-2">
               <span className="font-bold text-slate-800 text-lg">Week {weekData.cycleWeek}</span>

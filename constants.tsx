@@ -2,9 +2,10 @@ import React from 'react';
 import { Person, TaskDefinition } from './types';
 import { Trash2, Armchair, ShoppingBag, Droplets, Monitor, Sofa, Sparkles, Utensils } from 'lucide-react';
 
-// Based on the whiteboard: "Week 1: 10-16 Nov"
-// We assume year 2024 to make it current/future proof relative to the prompt.
-export const ANCHOR_DATE = new Date('2024-11-10T00:00:00'); 
+// Anchor date from CSV: Week 1 starts Nov 10, 2025
+// Week 1: Nov 10-16, Week 2: Nov 17-23, Week 3: Nov 24-30, Week 4: Dec 1-7, Week 5: Dec 8-14
+// Data synced with huize-bruce-weeks-from-2025-11-10-to-2027.csv
+export const ANCHOR_DATE = new Date('2025-11-10T00:00:00'); 
 
 export const PEOPLE_ORDER: Person[] = [
   Person.Vera,    // Index 0
