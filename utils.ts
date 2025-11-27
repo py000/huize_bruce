@@ -88,7 +88,7 @@ export const getWeekData = (targetDate: Date): WeekData => {
 };
 
 export const formatDateRange = (start: Date, end: Date): string => {
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
   return `${start.toLocaleDateString('nl-NL', options)} - ${end.toLocaleDateString('nl-NL', options)}`;
 };
 
