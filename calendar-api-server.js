@@ -84,7 +84,6 @@ function generateICS(person) {
     
     if (assignment) {
       const eventStart = new Date(weekData.startDate);
-      eventStart.setDate(eventStart.getDate() + 1); // Monday
       eventStart.setHours(0, 0, 0, 0);
       
       const eventEnd = new Date(eventStart);

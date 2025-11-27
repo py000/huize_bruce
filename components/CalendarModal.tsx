@@ -63,9 +63,8 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 
     upcomingEvents.forEach((event, index) => {
       // Adjust to Monday 00:00 - 02:00
-      // event.date is likely Sunday (from utils). Add 1 day for Monday.
+      // event.date already represents the Monday of that week
       const eventStart = new Date(event.date);
-      eventStart.setDate(eventStart.getDate() + 1); 
       eventStart.setHours(0, 0, 0, 0);
 
       const eventEnd = new Date(eventStart);
@@ -228,7 +227,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                        {event.date.toLocaleDateString('en-US', {month: 'short'})}
                      </span>
                      <span className="text-sm font-bold text-slate-700 leading-none mt-0.5">
-                       {event.date.getDate() + 1}
+                      {event.date.getDate()}
                      </span>
                   </div>
                   <div className="min-w-0">
