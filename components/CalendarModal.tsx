@@ -148,11 +148,58 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 
   const copyToClipboard = async (text: string, type: string) => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopiedUrl(type);
-      setTimeout(() => setCopiedUrl(null), 2000);
+      // Try modern clipboard API first (works on HTTPS and localhost)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        setCopiedUrl(type);
+        setTimeout(() => setCopiedUrl(null), 2000);
+        return;
+      }
+      
+      // Fallback for older browsers or non-HTTPS contexts
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          setCopiedUrl(type);
+          setTimeout(() => setCopiedUrl(null), 2000);
+        } else {
+          throw new Error('Copy command failed');
+        }
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+        // Last resort: find and select the input field
+        const inputs = document.querySelectorAll('input[readonly]');
+        inputs.forEach((input) => {
+          const htmlInput = input as HTMLInputElement;
+          if (htmlInput.value === text) {
+            htmlInput.select();
+            htmlInput.setSelectionRange(0, text.length);
+          }
+        });
+      } finally {
+        document.body.removeChild(textArea);
+      }
     } catch (err) {
       console.error('Failed to copy:', err);
+      // Last resort: find and select the input field
+      const inputs = document.querySelectorAll('input[readonly]');
+      inputs.forEach((input) => {
+        const htmlInput = input as HTMLInputElement;
+        if (htmlInput.value === text) {
+          htmlInput.select();
+          htmlInput.setSelectionRange(0, text.length);
+        }
+      });
     }
   };
 
@@ -265,11 +312,19 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                   type="text"
                   readOnly
                   value={getAppleCalendarUrl()}
-                  className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono"
+                  onClick={(e) => {
+                    (e.target as HTMLInputElement).select();
+                    (e.target as HTMLInputElement).setSelectionRange(0, getAppleCalendarUrl().length);
+                  }}
+                  className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono cursor-pointer"
                 />
                 <button
-                  onClick={() => copyToClipboard(getAppleCalendarUrl(), 'apple')}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors flex items-center gap-1"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    copyToClipboard(getAppleCalendarUrl(), 'apple');
+                  }}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors flex items-center gap-1 flex-shrink-0"
                   title="Copy Apple Calendar URL"
                 >
                   <Copy className="w-4 h-4" />
@@ -296,11 +351,19 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                   type="text"
                   readOnly
                   value={getGoogleCalendarUrl()}
-                  className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono"
+                  onClick={(e) => {
+                    (e.target as HTMLInputElement).select();
+                    (e.target as HTMLInputElement).setSelectionRange(0, getGoogleCalendarUrl().length);
+                  }}
+                  className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono cursor-pointer"
                 />
                 <button
-                  onClick={() => copyToClipboard(getGoogleCalendarUrl(), 'google')}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors flex items-center gap-1"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    copyToClipboard(getGoogleCalendarUrl(), 'google');
+                  }}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors flex items-center gap-1 flex-shrink-0"
                   title="Copy Google Calendar URL"
                 >
                   <Copy className="w-4 h-4" />
